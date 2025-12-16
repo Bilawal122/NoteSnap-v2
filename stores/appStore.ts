@@ -105,6 +105,15 @@ interface AppState {
     incrementStreak: () => void;
     incrementCardsStudied: (count: number) => void;
 
+    // Theme
+    isDarkMode: boolean;
+    toggleDarkMode: () => void;
+
+    // Card Management
+    addCardToDeck: (deckId: string, card: Flashcard) => void;
+    updateCard: (deckId: string, cardId: string, updates: Partial<Flashcard>) => void;
+    deleteCard: (deckId: string, cardId: string) => void;
+
     // Sorting
     notesSortBy: SortOption;
     decksSortBy: SortOption;
@@ -182,6 +191,27 @@ export const useAppStore = create<AppState>()(
             setUserName: (name) => set({ userName: name }),
             incrementStreak: () => set((state) => ({ studyStreak: state.studyStreak + 1 })),
             incrementCardsStudied: (count) => set((state) => ({ totalCardsStudied: state.totalCardsStudied + count })),
+
+            // Theme
+            isDarkMode: false,
+            toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
+
+            // Card Management
+            addCardToDeck: (deckId, card) => set((state) => ({
+                decks: state.decks.map(d => d.id === deckId ? { ...d, cards: [...d.cards, card] } : d)
+            })),
+            updateCard: (deckId, cardId, updates) => set((state) => ({
+                decks: state.decks.map(d => d.id === deckId ? {
+                    ...d,
+                    cards: d.cards.map(c => c.id === cardId ? { ...c, ...updates } : c)
+                } : d)
+            })),
+            deleteCard: (deckId, cardId) => set((state) => ({
+                decks: state.decks.map(d => d.id === deckId ? {
+                    ...d,
+                    cards: d.cards.filter(c => c.id !== cardId)
+                } : d)
+            })),
 
             // Sorting
             notesSortBy: 'newest',

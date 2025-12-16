@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, sortItems, getDeckProgress, FlashcardDeck, Quiz, SortOption } from '../../stores/appStore';
-import { Colors, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { Colors, Gradients, BorderRadius, Typography, Shadows } from '../../constants/theme';
 
 type Tab = 'flashcards' | 'quizzes';
 
@@ -32,7 +32,7 @@ function SortPicker({ value, onChange }: { value: SortOption; onChange: (v: Sort
     );
 }
 
-function DeckCard({ deck, onPress, onToggleFavorite }: { deck: FlashcardDeck; onPress: () => void; onToggleFavorite: () => void }) {
+function DeckCard({ deck, onPress, onManage, onToggleFavorite }: { deck: FlashcardDeck; onPress: () => void; onManage: () => void; onToggleFavorite: () => void }) {
     const progress = getDeckProgress(deck);
     const masteredCount = deck.cards.filter(c => c.confidence === 'mastered').length;
 
@@ -40,20 +40,25 @@ function DeckCard({ deck, onPress, onToggleFavorite }: { deck: FlashcardDeck; on
         <TouchableOpacity onPress={onPress} activeOpacity={0.8}>
             <LinearGradient colors={['#ffffff', '#f8f8f8']} style={styles.card}>
                 <View style={styles.cardIcon}>
-                    <Ionicons name="layers" size={22} color={Colors.accent} />
+                    <Ionicons name="layers" size={22} color={Colors.primary} />
                 </View>
                 <View style={styles.cardContent}>
                     <View style={styles.cardHeader}>
                         <Text style={styles.cardTitle} numberOfLines={1}>{deck.title}</Text>
-                        <TouchableOpacity onPress={(e) => { e.stopPropagation(); onToggleFavorite(); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                            <Ionicons name={deck.isFavorite ? "star" : "star-outline"} size={18} color={deck.isFavorite ? Colors.warning : Colors.textMuted} />
-                        </TouchableOpacity>
+                        <View style={styles.cardActions}>
+                            <TouchableOpacity onPress={(e) => { e.stopPropagation(); onManage(); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                                <Ionicons name="settings-outline" size={18} color={Colors.textMuted} />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={(e) => { e.stopPropagation(); onToggleFavorite(); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                                <Ionicons name={deck.isFavorite ? "star" : "star-outline"} size={18} color={deck.isFavorite ? Colors.warning : Colors.textMuted} />
+                            </TouchableOpacity>
+                        </View>
                     </View>
                     <Text style={styles.cardMeta}>{deck.cards.length} cards • {masteredCount} mastered</Text>
                 </View>
                 <View style={styles.progressContainer}>
                     <View style={styles.progressBar}>
-                        <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                        <LinearGradient colors={Gradients.primary} style={[styles.progressFill, { width: `${progress}%` }]} />
                     </View>
                     <Text style={styles.progressText}>{progress}%</Text>
                 </View>
@@ -175,6 +180,7 @@ export default function StudyScreen() {
                                         key={deck.id}
                                         deck={deck}
                                         onPress={() => handleDeckPress(deck.id)}
+                                        onManage={() => router.push(`/deck/${deck.id}`)}
                                         onToggleFavorite={() => toggleDeckFavorite(deck.id)}
                                     />
                                 ))}
@@ -234,6 +240,7 @@ const styles = StyleSheet.create({
     cardIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.accentSoft, alignItems: 'center', justifyContent: 'center', marginRight: 14 },
     cardContent: { flex: 1 },
     cardHeader: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    cardActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     cardTitle: { flex: 1, fontSize: Typography.sizes.base, fontWeight: Typography.medium, color: Colors.textPrimary },
     cardMeta: { fontSize: Typography.sizes.sm, color: Colors.textSecondary, marginTop: 2 },
     progressContainer: { alignItems: 'flex-end' },

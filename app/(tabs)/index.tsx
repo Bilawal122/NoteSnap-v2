@@ -36,8 +36,8 @@ export default function HomeScreen() {
                         <Text style={styles.greeting}>Hello, {userName}! 👋</Text>
                         <Text style={styles.subtitle}>Ready to learn something new?</Text>
                     </View>
-                    <TouchableOpacity style={styles.notificationBtn}>
-                        <Ionicons name="notifications-outline" size={22} color={Colors.textPrimary} />
+                    <TouchableOpacity style={styles.searchBtn} onPress={() => router.push('/search')}>
+                        <Ionicons name="search" size={22} color={Colors.textPrimary} />
                     </TouchableOpacity>
                 </View>
 
@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
     greeting: { fontSize: Typography.sizes['2xl'], fontWeight: Typography.bold, color: Colors.textPrimary },
     subtitle: { fontSize: Typography.sizes.base, color: Colors.textSecondary, marginTop: 4 },
-    notificationBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center', ...Shadows.sm },
+    searchBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: Colors.card, alignItems: 'center', justifyContent: 'center', ...Shadows.sm },
     statsRow: { flexDirection: 'row', gap: 10, marginBottom: 28 },
     statCardWrapper: { flex: 1, borderRadius: BorderRadius.lg, overflow: 'hidden', ...Shadows.md },
     statCard: { paddingVertical: 16, alignItems: 'center' },
