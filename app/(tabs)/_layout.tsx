@@ -1,14 +1,15 @@
 import { Tabs } from 'expo-router';
 import { View, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, BorderRadius, Shadows } from '../../constants/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../contexts/ThemeContext';
 
 type IconName = 'home' | 'home-outline' | 'chatbubble' | 'chatbubble-outline' |
     'add' | 'book' | 'book-outline' | 'person' | 'person-outline';
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
+    const { colors, shadows, borderRadius, isDarkMode } = useTheme();
 
     return (
         <Tabs
@@ -20,16 +21,16 @@ export default function TabLayout() {
                     left: 24,
                     right: 24,
                     height: 64,
-                    borderRadius: BorderRadius.xl,
-                    backgroundColor: Colors.white,
+                    borderRadius: borderRadius.xl,
+                    backgroundColor: isDarkMode ? colors.card : colors.white,
                     borderTopWidth: 0,
                     borderWidth: 1,
-                    borderColor: Colors.border,
-                    ...Shadows.md,
+                    borderColor: colors.border,
+                    ...shadows.md,
                 },
                 tabBarShowLabel: false,
-                tabBarActiveTintColor: Colors.accent,
-                tabBarInactiveTintColor: Colors.textMuted,
+                tabBarActiveTintColor: colors.primary,
+                tabBarInactiveTintColor: colors.textMuted,
             }}
         >
             <Tabs.Screen
@@ -55,8 +56,8 @@ export default function TabLayout() {
                 options={{
                     title: 'Add',
                     tabBarIcon: ({ focused }) => (
-                        <View style={styles.addButton}>
-                            <Ionicons name="add" size={24} color={Colors.white} />
+                        <View style={[styles.addButton, { backgroundColor: colors.primary }, shadows.md]}>
+                            <Ionicons name="add" size={24} color="#fff" />
                         </View>
                     ),
                 }}
@@ -88,10 +89,8 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: Colors.accent,
         alignItems: 'center',
         justifyContent: 'center',
         marginTop: -8,
-        ...Shadows.md,
     },
 });
