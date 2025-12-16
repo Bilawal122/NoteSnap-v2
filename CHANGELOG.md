@@ -462,7 +462,8 @@ These are additional features that could enhance the app:
 | 0.5.0 | Dec 2024 | Vision + Image features |
 | 0.6.0 | Dec 2024 | Flashcards + Quizzes |
 | 0.7.0 | Dec 2024 | Save AI responses |
-| 0.8.0 | Dec 2024 | UI overhaul (current) |
+| 0.8.0 | Dec 2024 | UI overhaul (vibrant theme) |
+| 0.9.0 | Dec 2024 | Search, Deck Management, Dark Mode Toggle |
 
 ---
 
