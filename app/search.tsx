@@ -4,8 +4,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useAppStore } from '../../stores/appStore';
-import { Colors, Gradients, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useAppStore } from '../stores/appStore';
+import { useTheme, Colors, Gradients, BorderRadius, Typography, Shadows } from '../contexts/ThemeContext';
 
 type SearchResultType = 'note' | 'deck' | 'quiz';
 

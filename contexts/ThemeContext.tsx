@@ -68,3 +68,7 @@ export function useTheme() {
 
 // Convenience exports
 export { LightColors, DarkColors, Gradients, DarkGradients, Spacing, BorderRadius, Typography, Shadows, DarkShadows };
+
+// Static exports for StyleSheet compatibility (use LightColors as default)
+// For dynamic theming in components, use useTheme() hook
+export const Colors = LightColors;

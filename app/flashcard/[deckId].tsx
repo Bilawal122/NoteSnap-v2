@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, Flashcard } from '../../stores/appStore';
-import { Colors, Gradients, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useTheme, Colors, Gradients, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 
 const { width } = Dimensions.get('window');
 

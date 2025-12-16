@@ -9,7 +9,7 @@ import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, Note } from '../../stores/appStore';
 import { analyzeImageWithAction, extractPDFText } from '../../utils/ai';
-import { Colors, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useTheme, Colors, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 
 function UploadOption({ icon, title, subtitle, onPress, color = Colors.accent }: {
     icon: keyof typeof Ionicons.glyphMap;

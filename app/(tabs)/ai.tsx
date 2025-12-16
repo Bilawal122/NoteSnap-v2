@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Colors, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useTheme, Colors, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 import { callAI, AI_PROMPTS } from '../../utils/ai';
 import { useAppStore } from '../../stores/appStore';
 

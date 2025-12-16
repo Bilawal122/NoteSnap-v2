@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, Note, AINoteEntry } from '../../stores/appStore';
 import { callAI, AI_PROMPTS, askAboutNote, analyzeImageWithAction } from '../../utils/ai';
-import { Colors, Gradients, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useTheme, Colors, Gradients, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

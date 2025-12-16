@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, sortItems, getDeckProgress, FlashcardDeck, Quiz, SortOption } from '../../stores/appStore';
-import { Colors, Gradients, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useTheme, Colors, Gradients, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 
 type Tab = 'flashcards' | 'quizzes';
 
