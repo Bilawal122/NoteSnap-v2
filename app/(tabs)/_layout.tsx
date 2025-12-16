@@ -1,15 +1,17 @@
 import { Tabs } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '../../contexts/ThemeContext';
-
-type IconName = 'home' | 'home-outline' | 'chatbubble' | 'chatbubble-outline' |
-    'add' | 'book' | 'book-outline' | 'person' | 'person-outline';
 
 export default function TabLayout() {
     const insets = useSafeAreaInsets();
-    const { colors, shadows, borderRadius, isDarkMode } = useTheme();
+    const { colors, isDarkMode, gradients } = useTheme();
+
+    // Sleek minimal tab bar
+    const TAB_BAR_HEIGHT = 56;
+    const TAB_BAR_MARGIN = 16;
 
     return (
         <Tabs
@@ -17,20 +19,32 @@ export default function TabLayout() {
                 headerShown: false,
                 tabBarStyle: {
                     position: 'absolute',
-                    bottom: insets.bottom + 20,
-                    left: 24,
-                    right: 24,
-                    height: 64,
-                    borderRadius: borderRadius.xl,
-                    backgroundColor: isDarkMode ? colors.card : colors.white,
+                    bottom: Math.max(insets.bottom, 8) + TAB_BAR_MARGIN,
+                    left: TAB_BAR_MARGIN,
+                    right: TAB_BAR_MARGIN,
+                    height: TAB_BAR_HEIGHT,
+                    borderRadius: TAB_BAR_HEIGHT / 2,
+                    backgroundColor: isDarkMode
+                        ? 'rgba(28, 28, 30, 0.92)'
+                        : 'rgba(255, 255, 255, 0.92)',
                     borderTopWidth: 0,
                     borderWidth: 1,
-                    borderColor: colors.border,
-                    ...shadows.md,
+                    borderColor: isDarkMode
+                        ? 'rgba(255, 255, 255, 0.08)'
+                        : 'rgba(0, 0, 0, 0.06)',
+                    shadowColor: isDarkMode ? '#000' : colors.primary,
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: isDarkMode ? 0.4 : 0.15,
+                    shadowRadius: 16,
+                    elevation: 8,
+                    paddingHorizontal: 8,
                 },
                 tabBarShowLabel: false,
                 tabBarActiveTintColor: colors.primary,
-                tabBarInactiveTintColor: colors.textMuted,
+                tabBarInactiveTintColor: isDarkMode ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
+                tabBarItemStyle: {
+                    paddingVertical: 8,
+                },
             }}
         >
             <Tabs.Screen
@@ -38,7 +52,14 @@ export default function TabLayout() {
                 options={{
                     title: 'Home',
                     tabBarIcon: ({ focused, color }) => (
-                        <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />
+                        <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+                            <Ionicons
+                                name={focused ? 'home' : 'home-outline'}
+                                size={focused ? 22 : 20}
+                                color={color}
+                            />
+                            {focused && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
+                        </View>
                     ),
                 }}
             />
@@ -47,7 +68,14 @@ export default function TabLayout() {
                 options={{
                     title: 'AI',
                     tabBarIcon: ({ focused, color }) => (
-                        <Ionicons name={focused ? 'chatbubble' : 'chatbubble-outline'} size={22} color={color} />
+                        <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+                            <Ionicons
+                                name={focused ? 'sparkles' : 'sparkles-outline'}
+                                size={focused ? 22 : 20}
+                                color={color}
+                            />
+                            {focused && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
+                        </View>
                     ),
                 }}
             />
@@ -56,7 +84,13 @@ export default function TabLayout() {
                 options={{
                     title: 'Add',
                     tabBarIcon: ({ focused }) => (
-                        <View style={[styles.addButton, { backgroundColor: colors.primary }, shadows.md]}>
+                        <View style={[
+                            styles.addButton,
+                            {
+                                backgroundColor: colors.primary,
+                                shadowColor: colors.primary,
+                            }
+                        ]}>
                             <Ionicons name="add" size={24} color="#fff" />
                         </View>
                     ),
@@ -67,7 +101,14 @@ export default function TabLayout() {
                 options={{
                     title: 'Study',
                     tabBarIcon: ({ focused, color }) => (
-                        <Ionicons name={focused ? 'book' : 'book-outline'} size={22} color={color} />
+                        <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+                            <Ionicons
+                                name={focused ? 'book' : 'book-outline'}
+                                size={focused ? 22 : 20}
+                                color={color}
+                            />
+                            {focused && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
+                        </View>
                     ),
                 }}
             />
@@ -76,7 +117,14 @@ export default function TabLayout() {
                 options={{
                     title: 'Profile',
                     tabBarIcon: ({ focused, color }) => (
-                        <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+                        <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+                            <Ionicons
+                                name={focused ? 'person' : 'person-outline'}
+                                size={focused ? 22 : 20}
+                                color={color}
+                            />
+                            {focused && <View style={[styles.activeIndicator, { backgroundColor: colors.primary }]} />}
+                        </View>
                     ),
                 }}
             />
@@ -85,12 +133,30 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-    addButton: {
-        width: 48,
-        height: 48,
-        borderRadius: 24,
+    iconContainer: {
         alignItems: 'center',
         justifyContent: 'center',
-        marginTop: -8,
+        paddingVertical: 4,
+    },
+    iconContainerActive: {
+        transform: [{ scale: 1.05 }],
+    },
+    activeIndicator: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        marginTop: 4,
+    },
+    addButton: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: -6,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.35,
+        shadowRadius: 8,
+        elevation: 6,
     },
 });
