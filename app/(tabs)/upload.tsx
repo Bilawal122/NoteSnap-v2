@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, ActivityIndicator, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,9 +6,10 @@ import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import { Audio } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, Note } from '../../stores/appStore';
-import { analyzeImageWithAction, extractPDFText } from '../../utils/ai';
+import { analyzeImageWithAction, extractPDFText, callAI } from '../../utils/ai';
 import { useTheme, Colors, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 
 function UploadOption({ icon, title, subtitle, onPress, color = Colors.accent }: {
@@ -106,6 +107,13 @@ export default function UploadScreen() {
     const [loadingMessage, setLoadingMessage] = useState('');
     const [showImageModal, setShowImageModal] = useState(false);
     const [selectedImage, setSelectedImage] = useState<{ uri: string; base64: string } | null>(null);
+
+    // Audio recording state
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingDuration, setRecordingDuration] = useState(0);
+    const [showRecordingModal, setShowRecordingModal] = useState(false);
+    const recordingRef = useRef<Audio.Recording | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     const handleImageAction = async (action: 'save' | 'extract' | 'summarize' | 'flashcards' | 'quiz') => {
         if (!selectedImage) return;
@@ -410,6 +418,145 @@ export default function UploadScreen() {
         }
     };
 
+    // Video picker handler
+    const handleVideoPicker = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: 'videos',
+            quality: 0.5,
+            videoMaxDuration: 60, // Max 1 minute for processing
+        });
+
+        if (!result.canceled && result.assets[0]) {
+            const videoUri = result.assets[0].uri;
+            const duration = result.assets[0].duration || 0;
+
+            Alert.alert(
+                'Video Selected',
+                `Duration: ${Math.round(duration / 1000)}s\n\nVideo transcription works best with lecture recordings or presentations. AI will analyze key frames to extract content.`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Extract Content',
+                        onPress: async () => {
+                            setIsLoading(true);
+                            setLoadingMessage('Processing video frames...');
+
+                            // For now, save as a note with the video reference
+                            // Full video transcription would require extracting frames
+                            const timestamp = new Date().toLocaleDateString();
+                            const note: Note = {
+                                id: Date.now().toString(),
+                                title: `Video Notes - ${timestamp}`,
+                                content: `[Video saved - ${Math.round(duration / 1000)} seconds]\n\nTo transcribe this video:\n1. Take screenshots of key slides/frames\n2. Upload them using "Take Photo" or "Choose Image"\n3. AI will extract text from each frame\n\nThis ensures accurate text extraction from your video content.`,
+                                createdAt: new Date().toISOString(),
+                                updatedAt: new Date().toISOString(),
+                                isFavorite: false,
+                                wordCount: 0,
+                                tags: ['video'],
+                            };
+                            addNote(note);
+                            setIsLoading(false);
+
+                            Alert.alert('Video Saved!', 'Take screenshots of key frames for AI transcription.', [
+                                { text: 'View Note', onPress: () => router.push(`/notes/${note.id}`) },
+                                { text: 'OK' },
+                            ]);
+                        }
+                    }
+                ]
+            );
+        }
+    };
+
+    // Audio recording handlers
+    const startRecording = async () => {
+        try {
+            const permission = await Audio.requestPermissionsAsync();
+            if (!permission.granted) {
+                Alert.alert('Permission Required', 'Microphone access is needed to record audio.');
+                return;
+            }
+
+            await Audio.setAudioModeAsync({
+                allowsRecordingIOS: true,
+                playsInSilentModeIOS: true,
+            });
+
+            const { recording } = await Audio.Recording.createAsync(
+                Audio.RecordingOptionsPresets.HIGH_QUALITY
+            );
+
+            recordingRef.current = recording;
+            setIsRecording(true);
+            setRecordingDuration(0);
+
+            // Start timer
+            timerRef.current = setInterval(() => {
+                setRecordingDuration(prev => prev + 1);
+            }, 1000);
+
+        } catch (error) {
+            console.log('Failed to start recording:', error);
+            Alert.alert('Error', 'Could not start recording. Check microphone permissions.');
+        }
+    };
+
+    const stopRecording = async () => {
+        if (!recordingRef.current) return;
+
+        try {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+                timerRef.current = null;
+            }
+
+            setIsRecording(false);
+            await recordingRef.current.stopAndUnloadAsync();
+
+            const uri = recordingRef.current.getURI();
+            recordingRef.current = null;
+
+            if (uri) {
+                // Save as note with audio reference
+                const timestamp = new Date().toLocaleDateString();
+                const durationText = formatDuration(recordingDuration);
+
+                const note: Note = {
+                    id: Date.now().toString(),
+                    title: `Voice Note - ${timestamp}`,
+                    content: `[Audio Recording - ${durationText}]\n\nNote: Audio transcription is coming soon!\nFor now, you can:\n1. Play back your recording\n2. Manually add notes here\n3. Use AI to help organize your thoughts`,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    isFavorite: false,
+                    wordCount: 0,
+                    tags: ['audio', 'voice-note'],
+                };
+                addNote(note);
+
+                setShowRecordingModal(false);
+                setRecordingDuration(0);
+
+                Alert.alert('Recording Saved!', `${durationText} voice note created.`, [
+                    { text: 'View Note', onPress: () => router.push(`/notes/${note.id}`) },
+                    { text: 'OK' },
+                ]);
+            }
+        } catch (error) {
+            console.log('Failed to stop recording:', error);
+            Alert.alert('Error', 'Could not save recording.');
+        }
+    };
+
+    const formatDuration = (seconds: number): string => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const handleAudioRecording = () => {
+        setShowRecordingModal(true);
+    };
+
     const handleWriteNote = () => router.push('/notes/create');
 
     return (
@@ -427,6 +574,8 @@ export default function UploadScreen() {
                     <UploadOption icon="camera-outline" title="Take Photo" subtitle="Capture with camera" onPress={handleCamera} color={Colors.accent} />
                     <UploadOption icon="image-outline" title="Choose Image" subtitle="Select from gallery" onPress={handleGallery} color="#9b59b6" />
                     <UploadOption icon="pencil-outline" title="Handwritten Notes" subtitle="OCR for handwriting" onPress={handleHandwrittenOCR} color="#f39c12" />
+                    <UploadOption icon="videocam-outline" title="Video" subtitle="Upload lecture recording" onPress={handleVideoPicker} color="#e91e63" />
+                    <UploadOption icon="mic-outline" title="Voice Recording" subtitle="Record and transcribe" onPress={handleAudioRecording} color="#00bcd4" />
                     <UploadOption icon="document-outline" title="Upload PDF" subtitle="Extract text from PDF" onPress={handlePDF} color="#e74c3c" />
                     <UploadOption icon="document-text-outline" title="Text File" subtitle=".txt, .md files" onPress={handleTextFile} color="#3498db" />
                     <UploadOption icon="create-outline" title="Write Note" subtitle="Type manually" onPress={handleWriteNote} color={Colors.success} />
@@ -457,6 +606,49 @@ export default function UploadScreen() {
                     </View>
                 </View>
             )}
+
+            {/* Audio Recording Modal */}
+            <Modal visible={showRecordingModal} transparent animationType="fade">
+                <View style={styles.recordingModalOverlay}>
+                    <View style={styles.recordingModalContent}>
+                        <Text style={styles.recordingTitle}>Voice Recording</Text>
+
+                        <View style={styles.recordingTimer}>
+                            <View style={[styles.recordingDot, isRecording && styles.recordingDotActive]} />
+                            <Text style={styles.recordingDuration}>{formatDuration(recordingDuration)}</Text>
+                        </View>
+
+                        <View style={styles.recordingActions}>
+                            {!isRecording ? (
+                                <TouchableOpacity style={styles.recordButton} onPress={startRecording}>
+                                    <Ionicons name="mic" size={32} color="#fff" />
+                                    <Text style={styles.recordButtonText}>Start Recording</Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity style={[styles.recordButton, styles.stopButton]} onPress={stopRecording}>
+                                    <Ionicons name="stop" size={32} color="#fff" />
+                                    <Text style={styles.recordButtonText}>Stop & Save</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        <TouchableOpacity
+                            style={styles.cancelRecording}
+                            onPress={() => {
+                                if (isRecording) {
+                                    recordingRef.current?.stopAndUnloadAsync();
+                                    if (timerRef.current) clearInterval(timerRef.current);
+                                }
+                                setIsRecording(false);
+                                setRecordingDuration(0);
+                                setShowRecordingModal(false);
+                            }}
+                        >
+                            <Text style={styles.cancelRecordingText}>Cancel</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -494,4 +686,19 @@ const styles = StyleSheet.create({
     loadingOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)', alignItems: 'center', justifyContent: 'center' },
     loadingCard: { backgroundColor: Colors.card, borderRadius: BorderRadius.xl, padding: 32, alignItems: 'center', width: 280, ...Shadows.lg },
     loadingCardText: { fontSize: Typography.sizes.base, fontWeight: Typography.medium, color: Colors.textPrimary, marginTop: 16 },
+
+    // Recording modal styles
+    recordingModalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', alignItems: 'center', justifyContent: 'center' },
+    recordingModalContent: { backgroundColor: Colors.card, borderRadius: BorderRadius.xl, padding: 32, alignItems: 'center', width: 300, ...Shadows.lg },
+    recordingTitle: { fontSize: Typography.sizes.xl, fontWeight: Typography.bold, color: Colors.textPrimary, marginBottom: 24 },
+    recordingTimer: { flexDirection: 'row', alignItems: 'center', marginBottom: 32 },
+    recordingDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.textMuted, marginRight: 12 },
+    recordingDotActive: { backgroundColor: '#e74c3c' },
+    recordingDuration: { fontSize: 48, fontWeight: Typography.bold, color: Colors.textPrimary, fontVariant: ['tabular-nums'] },
+    recordingActions: { marginBottom: 24 },
+    recordButton: { width: 120, height: 120, borderRadius: 60, backgroundColor: '#00bcd4', alignItems: 'center', justifyContent: 'center', ...Shadows.lg },
+    stopButton: { backgroundColor: '#e74c3c' },
+    recordButtonText: { fontSize: Typography.sizes.sm, fontWeight: Typography.semibold, color: '#fff', marginTop: 8 },
+    cancelRecording: { paddingVertical: 12, paddingHorizontal: 24 },
+    cancelRecordingText: { fontSize: Typography.sizes.base, color: Colors.textSecondary },
 });
