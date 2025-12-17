@@ -1,7 +1,7 @@
 // OpenRouter AI Integration - FREE MODELS ONLY
 // No costs at all!
 
-const OPENROUTER_API_KEY = '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';
+const OPENROUTER_API_KEY = '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';
 const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 // ============================================
@@ -213,7 +213,7 @@ ONLY output the JSON array, no other text.`,
     return result;
 }
 
-// Clean text - remove markdown
+// Clean text - remove markdown, URLs, and AI artifacts
 function cleanText(text: string): string {
     return text
         .replace(/^#{1,6}\s*/gm, '')
@@ -224,6 +224,12 @@ function cleanText(text: string): string {
         .replace(/^[\*\-]\s+/gm, '• ')
         .replace(/\n{3,}/g, '\n\n')
         .replace(/<think>[\s\S]*?<\/think>/g, '') // Remove thinking tags
+        // Remove URLs and web links that AI models add
+        .replace(/https?:\/\/[^\s\n\]]+/g, '')
+        .replace(/\[.*?\]\(.*?\)/g, '') // Remove markdown links
+        .replace(/^\s*\d+\.\s*$/gm, '') // Remove orphaned numbered list items
+        .replace(/^\s*•\s*$/gm, '') // Remove orphaned bullet points
+        .replace(/\n{3,}/g, '\n\n') // Clean up excess newlines again
         .trim();
 }
 

@@ -12,25 +12,28 @@ import { useAppStore, Note } from '../../stores/appStore';
 import { analyzeImageWithAction, extractPDFText, callAI } from '../../utils/ai';
 import { useTheme, Colors, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 
-function UploadOption({ icon, title, subtitle, onPress, color = Colors.accent }: {
+function UploadOption({ icon, title, subtitle, onPress, color, colors, shadows, isDarkMode }: {
     icon: keyof typeof Ionicons.glyphMap;
     title: string;
     subtitle: string;
     onPress: () => void;
-    color?: string;
+    color: string;
+    colors: any;
+    shadows: any;
+    isDarkMode: boolean;
 }) {
     return (
         <TouchableOpacity onPress={onPress} activeOpacity={0.7}>
-            <LinearGradient colors={['#ffffff', '#f8f8f8']} style={styles.optionCard}>
-                <View style={[styles.optionIcon, { backgroundColor: `${color}15` }]}>
+            <View style={[styles.optionCard, { backgroundColor: colors.card, ...shadows.sm }]}>
+                <View style={[styles.optionIcon, { backgroundColor: `${color}${isDarkMode ? '30' : '15'}` }]}>
                     <Ionicons name={icon} size={24} color={color} />
                 </View>
                 <View style={styles.optionText}>
-                    <Text style={styles.optionTitle}>{title}</Text>
-                    <Text style={styles.optionSubtitle}>{subtitle}</Text>
+                    <Text style={[styles.optionTitle, { color: colors.textPrimary }]}>{title}</Text>
+                    <Text style={[styles.optionSubtitle, { color: colors.textSecondary }]}>{subtitle}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={20} color={Colors.textMuted} />
-            </LinearGradient>
+                <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+            </View>
         </TouchableOpacity>
     );
 }
@@ -559,26 +562,28 @@ export default function UploadScreen() {
 
     const handleWriteNote = () => router.push('/notes/create');
 
+    const { colors, gradients, shadows, isDarkMode } = useTheme();
+
     return (
-        <View style={styles.container}>
-            <LinearGradient colors={['#faf3dd', '#f0ead2']} style={StyleSheet.absoluteFill} />
+        <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <LinearGradient colors={isDarkMode ? ['#111827', '#1f2937'] : ['#faf3dd', '#f0ead2']} style={StyleSheet.absoluteFill} />
 
             <ScrollView
                 contentContainerStyle={[styles.content, { paddingTop: insets.top + 24, paddingBottom: 120 }]}
                 showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.title}>Add Notes</Text>
-                <Text style={styles.subtitle}>Capture, upload, or create study materials</Text>
+                <Text style={[styles.title, { color: colors.textPrimary }]}>Add Notes</Text>
+                <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Capture, upload, or create study materials</Text>
 
                 <View style={styles.optionsContainer}>
-                    <UploadOption icon="camera-outline" title="Take Photo" subtitle="Capture with camera" onPress={handleCamera} color={Colors.accent} />
-                    <UploadOption icon="image-outline" title="Choose Image" subtitle="Select from gallery" onPress={handleGallery} color="#9b59b6" />
-                    <UploadOption icon="pencil-outline" title="Handwritten Notes" subtitle="OCR for handwriting" onPress={handleHandwrittenOCR} color="#f39c12" />
-                    <UploadOption icon="videocam-outline" title="Video" subtitle="Upload lecture recording" onPress={handleVideoPicker} color="#e91e63" />
-                    <UploadOption icon="mic-outline" title="Voice Recording" subtitle="Record and transcribe" onPress={handleAudioRecording} color="#00bcd4" />
-                    <UploadOption icon="document-outline" title="Upload PDF" subtitle="Extract text from PDF" onPress={handlePDF} color="#e74c3c" />
-                    <UploadOption icon="document-text-outline" title="Text File" subtitle=".txt, .md files" onPress={handleTextFile} color="#3498db" />
-                    <UploadOption icon="create-outline" title="Write Note" subtitle="Type manually" onPress={handleWriteNote} color={Colors.success} />
+                    <UploadOption icon="camera-outline" title="Take Photo" subtitle="Capture with camera" onPress={handleCamera} color={colors.primary} colors={colors} shadows={shadows} isDarkMode={isDarkMode} />
+                    <UploadOption icon="image-outline" title="Choose Image" subtitle="Select from gallery" onPress={handleGallery} color="#9b59b6" colors={colors} shadows={shadows} isDarkMode={isDarkMode} />
+                    <UploadOption icon="pencil-outline" title="Handwritten Notes" subtitle="OCR for handwriting" onPress={handleHandwrittenOCR} color="#f39c12" colors={colors} shadows={shadows} isDarkMode={isDarkMode} />
+                    <UploadOption icon="videocam-outline" title="Video" subtitle="Upload lecture recording" onPress={handleVideoPicker} color="#e91e63" colors={colors} shadows={shadows} isDarkMode={isDarkMode} />
+                    <UploadOption icon="mic-outline" title="Voice Recording" subtitle="Record and transcribe" onPress={handleAudioRecording} color="#00bcd4" colors={colors} shadows={shadows} isDarkMode={isDarkMode} />
+                    <UploadOption icon="document-outline" title="Upload PDF" subtitle="Extract text from PDF" onPress={handlePDF} color="#e74c3c" colors={colors} shadows={shadows} isDarkMode={isDarkMode} />
+                    <UploadOption icon="document-text-outline" title="Text File" subtitle=".txt, .md files" onPress={handleTextFile} color="#3498db" colors={colors} shadows={shadows} isDarkMode={isDarkMode} />
+                    <UploadOption icon="create-outline" title="Write Note" subtitle="Type manually" onPress={handleWriteNote} color={colors.success} colors={colors} shadows={shadows} isDarkMode={isDarkMode} />
                 </View>
 
                 <View style={styles.infoCard}>

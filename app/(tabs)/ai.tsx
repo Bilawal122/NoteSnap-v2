@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useTheme, Colors, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
+import { useTheme, BorderRadius, Typography } from '../../contexts/ThemeContext';
 import { callAI, AI_PROMPTS } from '../../utils/ai';
 import { useAppStore } from '../../stores/appStore';
 
@@ -22,29 +22,6 @@ interface PopupState {
     id: string;
     title: string;
     count: number;
-}
-
-function MessageBubble({ message, onView }: { message: Message; onView?: (type: 'flashcard' | 'quiz', id: string) => void }) {
-    const isUser = message.role === 'user';
-    return (
-        <View style={[styles.bubbleContainer, isUser && styles.userBubbleContainer]}>
-            <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
-                <Text style={[styles.bubbleText, isUser && styles.userBubbleText]}>{message.content}</Text>
-                {message.flashcardDeckId && onView && (
-                    <TouchableOpacity style={styles.actionButton} onPress={() => onView('flashcard', message.flashcardDeckId!)}>
-                        <Ionicons name="layers" size={16} color={Colors.accent} />
-                        <Text style={styles.actionButtonText}>View Flashcards</Text>
-                    </TouchableOpacity>
-                )}
-                {message.quizId && onView && (
-                    <TouchableOpacity style={styles.actionButton} onPress={() => onView('quiz', message.quizId!)}>
-                        <Ionicons name="help-circle" size={16} color={Colors.warning} />
-                        <Text style={[styles.actionButtonText, { color: Colors.warning }]}>Take Quiz</Text>
-                    </TouchableOpacity>
-                )}
-            </View>
-        </View>
-    );
 }
 
 function parseFlashcards(response: string): { front: string; back: string }[] | null {
@@ -87,31 +64,10 @@ function extractTopic(text: string): string {
     return match ? match[1].replace(/flashcard|quiz|card/gi, '').trim() : 'this topic';
 }
 
-function CreatedPopup({ popup, onClose, onStudyNow }: { popup: PopupState; onClose: () => void; onStudyNow: () => void }) {
-    if (!popup.visible) return null;
-    const isQuiz = popup.type === 'quiz';
-    return (
-        <Modal visible={popup.visible} transparent animationType="fade" onRequestClose={onClose}>
-            <View style={styles.popupOverlay}>
-                <View style={styles.popupContainer}>
-                    <LinearGradient colors={['#ffffff', '#f8f8f8']} style={styles.popupGradient}>
-                        <Ionicons name={isQuiz ? "help-circle" : "checkmark-circle"} size={48} color={isQuiz ? Colors.warning : Colors.success} />
-                        <Text style={styles.popupTitle}>{isQuiz ? 'Quiz Created!' : 'Flashcards Created!'}</Text>
-                        <Text style={styles.popupSubtitle}>{popup.count} {isQuiz ? 'questions' : 'cards'}</Text>
-                        <TouchableOpacity style={styles.popupPrimaryBtn} onPress={onStudyNow}>
-                            <Text style={styles.popupPrimaryBtnText}>{isQuiz ? 'Start Quiz' : 'Study Now'}</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={onClose}><Text style={styles.popupSecondaryBtnText}>Later</Text></TouchableOpacity>
-                    </LinearGradient>
-                </View>
-            </View>
-        </Modal>
-    );
-}
-
 export default function AIScreen() {
     const insets = useSafeAreaInsets();
     const router = useRouter();
+    const { colors, gradients, shadows, isDarkMode } = useTheme();
     const { notes, decks, quizzes, userName, studyStreak, totalCardsStudied, addDeck, addQuiz } = useAppStore();
     const [keyboardHeight, setKeyboardHeight] = useState(0);
 
@@ -177,7 +133,7 @@ export default function AIScreen() {
                     const deckId = Date.now().toString();
                     addDeck({
                         id: deckId, title: topic, createdAt: new Date().toISOString(), isFavorite: false,
-                        cards: flashcards.map((fc, i) => ({ id: `${deckId}-${i}`, front: fc.front, back: fc.back, confidence: 'new', correctCount: 0, incorrectCount: 0 })),
+                        cards: flashcards.map((fc, i) => ({ id: `${deckId}-${i}`, front: fc.front, back: fc.back, confidence: 'new' as const, correctCount: 0, incorrectCount: 0 })),
                     });
                     setPopup({ visible: true, type: 'flashcard', id: deckId, title: topic, count: flashcards.length });
                     aiResponse = { ...aiResponse, content: `Created ${flashcards.length} flashcards!`, flashcardDeckId: deckId };
@@ -213,45 +169,148 @@ export default function AIScreen() {
     const suggestions = ['Create flashcards about history', 'Quiz me on science', 'How am I doing?'];
     const bottomPadding = Platform.OS === 'web' ? 80 : Math.max(insets.bottom, 20) + 70;
 
-    return (
-        <View style={styles.container}>
-            <CreatedPopup popup={popup} onClose={() => setPopup(p => ({ ...p, visible: false }))} onStudyNow={() => { setPopup(p => ({ ...p, visible: false })); router.push(popup.type === 'flashcard' ? `/flashcard/${popup.id}` : `/quiz/${popup.id}`); }} />
+    // Dynamic styles based on theme
+    const dynamicStyles = {
+        container: { flex: 1, backgroundColor: colors.background },
+        header: {
+            flexDirection: 'row' as const,
+            alignItems: 'center' as const,
+            justifyContent: 'space-between' as const,
+            paddingHorizontal: 20,
+            paddingBottom: 12,
+            borderBottomWidth: 1,
+            borderBottomColor: colors.border,
+            paddingTop: insets.top + 8,
+        },
+        headerTitle: { fontSize: Typography.sizes.xl, fontWeight: Typography.semibold as any, color: colors.textPrimary },
+        statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success },
+        aiBubble: { backgroundColor: colors.card, ...shadows.sm, maxWidth: '85%', padding: 14, borderRadius: BorderRadius.lg },
+        userBubble: { backgroundColor: colors.primary, maxWidth: '85%', padding: 14, borderRadius: BorderRadius.lg },
+        bubbleText: { fontSize: Typography.sizes.base, color: colors.textPrimary, lineHeight: 22 },
+        userBubbleText: { color: '#ffffff' },
+        actionButton: {
+            flexDirection: 'row' as const,
+            alignItems: 'center' as const,
+            marginTop: 10,
+            paddingVertical: 8,
+            paddingHorizontal: 12,
+            backgroundColor: isDarkMode ? 'rgba(99,102,241,0.2)' : colors.accentSoft,
+            borderRadius: BorderRadius.md,
+            gap: 6
+        },
+        suggestionChip: {
+            backgroundColor: colors.card,
+            paddingHorizontal: 14,
+            paddingVertical: 8,
+            borderRadius: BorderRadius.full,
+            ...shadows.sm
+        },
+        inputContainer: {
+            position: 'absolute' as const,
+            left: 0,
+            right: 0,
+            paddingHorizontal: 16,
+            paddingTop: 8,
+            backgroundColor: colors.background,
+            borderTopWidth: 1,
+            borderTopColor: colors.border,
+            paddingBottom: keyboardHeight > 0 ? 12 : bottomPadding,
+            bottom: keyboardHeight > 0 ? keyboardHeight - (Platform.OS === 'ios' ? 0 : 0) : 0,
+        },
+        inputWrapper: {
+            flexDirection: 'row' as const,
+            alignItems: 'flex-end' as const,
+            backgroundColor: colors.card,
+            borderRadius: BorderRadius.lg,
+            paddingLeft: 16,
+            paddingRight: 8,
+            paddingVertical: 8,
+            ...shadows.sm
+        },
+        input: { flex: 1, fontSize: Typography.sizes.base, color: colors.textPrimary, maxHeight: 100, paddingVertical: 8 },
+        sendButton: {
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: colors.primary,
+            alignItems: 'center' as const,
+            justifyContent: 'center' as const
+        },
+        sendButtonDisabled: { backgroundColor: colors.divider },
+    };
 
-            <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
-                <Text style={styles.headerTitle}>AI Study Buddy</Text>
-                <View style={styles.statusDot} />
+    const renderMessage = ({ item }: { item: Message }) => {
+        const isUser = item.role === 'user';
+        return (
+            <View style={[styles.bubbleContainer, isUser && styles.userBubbleContainer]}>
+                <View style={isUser ? dynamicStyles.userBubble : dynamicStyles.aiBubble}>
+                    <Text style={[dynamicStyles.bubbleText, isUser && dynamicStyles.userBubbleText]}>{item.content}</Text>
+                    {item.flashcardDeckId && (
+                        <TouchableOpacity style={dynamicStyles.actionButton} onPress={() => handleView('flashcard', item.flashcardDeckId!)}>
+                            <Ionicons name="layers" size={16} color={colors.primary} />
+                            <Text style={{ fontSize: Typography.sizes.sm, fontWeight: Typography.medium as any, color: colors.primary }}>View Flashcards</Text>
+                        </TouchableOpacity>
+                    )}
+                    {item.quizId && (
+                        <TouchableOpacity style={dynamicStyles.actionButton} onPress={() => handleView('quiz', item.quizId!)}>
+                            <Ionicons name="help-circle" size={16} color={colors.warning} />
+                            <Text style={{ fontSize: Typography.sizes.sm, fontWeight: Typography.medium as any, color: colors.warning }}>Take Quiz</Text>
+                        </TouchableOpacity>
+                    )}
+                </View>
+            </View>
+        );
+    };
+
+    return (
+        <View style={dynamicStyles.container}>
+            {/* Popup */}
+            <Modal visible={popup.visible} transparent animationType="fade" onRequestClose={() => setPopup(p => ({ ...p, visible: false }))}>
+                <View style={styles.popupOverlay}>
+                    <View style={[styles.popupContainer, { backgroundColor: colors.card }]}>
+                        <Ionicons name={popup.type === 'quiz' ? "help-circle" : "checkmark-circle"} size={48} color={popup.type === 'quiz' ? colors.warning : colors.success} />
+                        <Text style={[styles.popupTitle, { color: colors.textPrimary }]}>{popup.type === 'quiz' ? 'Quiz Created!' : 'Flashcards Created!'}</Text>
+                        <Text style={[styles.popupSubtitle, { color: colors.textSecondary }]}>{popup.count} {popup.type === 'quiz' ? 'questions' : 'cards'}</Text>
+                        <TouchableOpacity style={[styles.popupPrimaryBtn, { backgroundColor: colors.primary }]} onPress={() => { setPopup(p => ({ ...p, visible: false })); router.push(popup.type === 'flashcard' ? `/flashcard/${popup.id}` : `/quiz/${popup.id}`); }}>
+                            <Text style={styles.popupPrimaryBtnText}>{popup.type === 'quiz' ? 'Start Quiz' : 'Study Now'}</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => setPopup(p => ({ ...p, visible: false }))}><Text style={[styles.popupSecondaryBtnText, { color: colors.textSecondary }]}>Later</Text></TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+
+            <View style={dynamicStyles.header}>
+                <Text style={dynamicStyles.headerTitle}>AI Study Buddy</Text>
+                <View style={dynamicStyles.statusDot} />
             </View>
 
             <FlatList
                 ref={flatListRef}
                 data={messages}
-                renderItem={({ item }) => <MessageBubble message={item} onView={handleView} />}
+                renderItem={renderMessage}
                 keyExtractor={item => item.id}
                 contentContainerStyle={[styles.messagesList, { paddingBottom: keyboardHeight > 0 ? 20 : bottomPadding + 80 }]}
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
-                ListFooterComponent={isTyping ? <Text style={styles.typingText}>Thinking...</Text> : null}
+                ListFooterComponent={isTyping ? <Text style={[styles.typingText, { color: colors.textMuted }]}>Thinking...</Text> : null}
             />
 
             {messages.length === 1 && keyboardHeight === 0 && (
                 <View style={styles.suggestions}>
                     {suggestions.map((s, i) => (
-                        <TouchableOpacity key={i} style={styles.suggestionChip} onPress={() => setInputText(s)}>
-                            <Text style={styles.suggestionText}>{s}</Text>
+                        <TouchableOpacity key={i} style={dynamicStyles.suggestionChip} onPress={() => setInputText(s)}>
+                            <Text style={{ fontSize: Typography.sizes.sm, color: colors.textSecondary }}>{s}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
             )}
 
-            <View style={[styles.inputContainer, {
-                paddingBottom: keyboardHeight > 0 ? 12 : bottomPadding,
-                bottom: keyboardHeight > 0 ? keyboardHeight - (Platform.OS === 'ios' ? 0 : 0) : 0,
-            }]}>
-                <View style={styles.inputWrapper}>
+            <View style={dynamicStyles.inputContainer}>
+                <View style={dynamicStyles.inputWrapper}>
                     <TextInput
-                        style={styles.input}
+                        style={dynamicStyles.input}
                         placeholder="Ask me anything..."
-                        placeholderTextColor={Colors.textMuted}
+                        placeholderTextColor={colors.textMuted}
                         value={inputText}
                         onChangeText={setInputText}
                         multiline
@@ -259,8 +318,12 @@ export default function AIScreen() {
                         returnKeyType="send"
                         onSubmitEditing={sendMessage}
                     />
-                    <TouchableOpacity onPress={sendMessage} disabled={!inputText.trim() || isTyping} style={[styles.sendButton, (!inputText.trim() || isTyping) && styles.sendButtonDisabled]}>
-                        <Ionicons name="arrow-up" size={18} color={inputText.trim() && !isTyping ? Colors.white : Colors.textMuted} />
+                    <TouchableOpacity
+                        onPress={sendMessage}
+                        disabled={!inputText.trim() || isTyping}
+                        style={[dynamicStyles.sendButton, (!inputText.trim() || isTyping) && dynamicStyles.sendButtonDisabled]}
+                    >
+                        <Ionicons name="arrow-up" size={18} color={inputText.trim() && !isTyping ? '#ffffff' : colors.textMuted} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -269,35 +332,16 @@ export default function AIScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: Colors.background },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: Colors.border },
-    headerTitle: { fontSize: Typography.sizes.xl, fontWeight: Typography.semibold, color: Colors.textPrimary },
-    statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.success },
     messagesList: { padding: 16 },
     bubbleContainer: { marginBottom: 12 },
     userBubbleContainer: { alignItems: 'flex-end' },
-    bubble: { maxWidth: '85%', padding: 14, borderRadius: BorderRadius.lg },
-    aiBubble: { backgroundColor: Colors.card, ...Shadows.sm },
-    userBubble: { backgroundColor: Colors.accent },
-    bubbleText: { fontSize: Typography.sizes.base, color: Colors.textPrimary, lineHeight: 22 },
-    userBubbleText: { color: Colors.white },
-    actionButton: { flexDirection: 'row', alignItems: 'center', marginTop: 10, paddingVertical: 8, paddingHorizontal: 12, backgroundColor: Colors.accentSoft, borderRadius: BorderRadius.md, gap: 6 },
-    actionButtonText: { fontSize: Typography.sizes.sm, fontWeight: Typography.medium, color: Colors.accent },
-    typingText: { fontSize: Typography.sizes.sm, color: Colors.textMuted, fontStyle: 'italic', paddingVertical: 8, paddingHorizontal: 4 },
+    typingText: { fontSize: Typography.sizes.sm, fontStyle: 'italic', paddingVertical: 8, paddingHorizontal: 4 },
     suggestions: { position: 'absolute', bottom: 180, left: 16, right: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-    suggestionChip: { backgroundColor: Colors.card, paddingHorizontal: 14, paddingVertical: 8, borderRadius: BorderRadius.full, ...Shadows.sm },
-    suggestionText: { fontSize: Typography.sizes.sm, color: Colors.textSecondary },
-    inputContainer: { position: 'absolute', left: 0, right: 0, paddingHorizontal: 16, paddingTop: 8, backgroundColor: Colors.background, borderTopWidth: 1, borderTopColor: Colors.border },
-    inputWrapper: { flexDirection: 'row', alignItems: 'flex-end', backgroundColor: Colors.card, borderRadius: BorderRadius.lg, paddingLeft: 16, paddingRight: 8, paddingVertical: 8, ...Shadows.sm },
-    input: { flex: 1, fontSize: Typography.sizes.base, color: Colors.textPrimary, maxHeight: 100, paddingVertical: 8 },
-    sendButton: { width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center' },
-    sendButtonDisabled: { backgroundColor: Colors.divider },
     popupOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 24 },
-    popupContainer: { width: '100%', maxWidth: 320, borderRadius: BorderRadius.xl, overflow: 'hidden' },
-    popupGradient: { padding: 32, alignItems: 'center', gap: 12 },
-    popupTitle: { fontSize: Typography.sizes['2xl'], fontWeight: Typography.bold, color: Colors.textPrimary },
-    popupSubtitle: { fontSize: Typography.sizes.base, color: Colors.textSecondary },
-    popupPrimaryBtn: { backgroundColor: Colors.accent, paddingVertical: 14, paddingHorizontal: 32, borderRadius: BorderRadius.lg, marginTop: 8 },
-    popupPrimaryBtnText: { fontSize: Typography.sizes.base, fontWeight: Typography.semibold, color: Colors.white },
-    popupSecondaryBtnText: { fontSize: Typography.sizes.base, color: Colors.textSecondary, marginTop: 8 },
+    popupContainer: { width: '100%', maxWidth: 320, borderRadius: BorderRadius.xl, padding: 32, alignItems: 'center', gap: 12 },
+    popupTitle: { fontSize: Typography.sizes['2xl'], fontWeight: Typography.bold },
+    popupSubtitle: { fontSize: Typography.sizes.base },
+    popupPrimaryBtn: { paddingVertical: 14, paddingHorizontal: 32, borderRadius: BorderRadius.lg, marginTop: 8 },
+    popupPrimaryBtnText: { fontSize: Typography.sizes.base, fontWeight: Typography.semibold, color: '#ffffff' },
+    popupSecondaryBtnText: { fontSize: Typography.sizes.base, marginTop: 8 },
 });
