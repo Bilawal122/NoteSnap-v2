@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore } from '../../stores/appStore';
-import { Colors, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useTheme, Colors, Gradients, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 
 export default function QuizViewer() {
     const { quizId } = useLocalSearchParams<{ quizId: string }>();

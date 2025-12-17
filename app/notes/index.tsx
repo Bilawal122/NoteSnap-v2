@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, sortItems, Note, SortOption } from '../../stores/appStore';
-import { Colors, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useTheme, Colors, Gradients, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 
 function NoteCard({ note, onPress, onToggleFavorite }: { note: Note; onPress: () => void; onToggleFavorite: () => void }) {
     const previewText = note.content.slice(0, 100) + (note.content.length > 100 ? '...' : '');

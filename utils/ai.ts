@@ -154,13 +154,32 @@ export async function analyzeImage(
 // Analyze image with specific action
 export async function analyzeImageWithAction(
     base64Image: string,
-    action: 'extract' | 'summarize' | 'flashcards' | 'quiz' | 'ask',
+    action: 'extract' | 'summarize' | 'flashcards' | 'quiz' | 'ask' | 'ocr' | 'document',
     customPrompt?: string
 ): Promise<AIResponse> {
     const prompts: Record<string, string> = {
         extract: `Look at this image carefully. Extract ALL the text you can see in the image.
 Write out the text exactly as it appears, keeping the structure.
 Just output the text, nothing else.`,
+
+        ocr: `This is a handwritten note or document. Your task is to transcribe ALL the handwritten text.
+IMPORTANT INSTRUCTIONS:
+- Read very carefully and transcribe EXACTLY what is written
+- Preserve paragraph breaks and line structure
+- If a word is unclear, write your best guess with [?] after it
+- Do NOT add any commentary, just output the transcribed text
+- Be thorough - don't skip any text you can see
+
+Transcribe all the handwritten text now:`,
+
+        document: `This is a document (could be a PowerPoint slide, PDF page, or scanned document).
+Extract ALL the text content from this document.
+Preserve the structure including:
+- Headings and titles
+- Bullet points and lists
+- Any important information
+
+Just output the extracted text, organized clearly:`,
 
         summarize: `Look at this image. Create a brief summary of what you see.
 Include the main topic and key points.
@@ -246,3 +265,16 @@ export async function askAboutNote(question: string, noteContent: string, imageB
 export async function askWithContext(question: string, context: string): Promise<AIResponse> {
     return callAI([{ role: 'user', content: `${context}\n\n${question}` }], AI_PROMPTS.assistant);
 }
+
+// Extract text from PDF (using vision since we can't parse PDF directly)
+export async function extractPDFText(base64PDF: string, filename: string): Promise<AIResponse> {
+    // Since we can't parse PDFs directly in React Native, we'll use the vision model
+    // to "read" PDF pages that have been converted to images
+    // For now, return a helpful message - actual PDF parsing would need a backend
+    return {
+        success: false,
+        message: '',
+        error: 'PDF extraction requires taking photos of pages. Use the camera to capture each page.',
+    };
+}
+

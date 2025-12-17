@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAppStore, Note } from '../../stores/appStore';
-import { Colors, BorderRadius, Typography, Shadows } from '../../constants/theme';
+import { useTheme, Colors, Gradients, BorderRadius, Typography, Shadows } from '../../contexts/ThemeContext';
 
 export default function CreateNoteScreen() {
     const insets = useSafeAreaInsets();

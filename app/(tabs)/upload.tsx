@@ -366,6 +366,50 @@ export default function UploadScreen() {
         } catch { setIsLoading(false); }
     };
 
+    const handleHandwrittenOCR = async () => {
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: 'images',
+            quality: 0.9,
+            base64: true,
+        });
+
+        if (!result.canceled && result.assets[0]?.base64) {
+            setIsLoading(true);
+            setLoadingMessage('Reading handwritten text...');
+
+            try {
+                const ocrResult = await analyzeImageWithAction(result.assets[0].base64, 'ocr');
+                setIsLoading(false);
+
+                if (ocrResult.success && ocrResult.message.length > 10) {
+                    const timestamp = new Date().toLocaleDateString();
+                    const note: Note = {
+                        id: Date.now().toString(),
+                        title: `Handwritten Notes - ${timestamp}`,
+                        content: ocrResult.message,
+                        imageUri: result.assets[0].uri,
+                        imageBase64: result.assets[0].base64,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                        isFavorite: false,
+                        wordCount: ocrResult.message.split(/\s+/).filter((w: string) => w.length > 0).length,
+                        tags: ['handwritten', 'ocr'],
+                    };
+                    addNote(note);
+                    Alert.alert('Text Extracted!', `${note.wordCount} words from handwriting.`, [
+                        { text: 'View', onPress: () => router.push(`/notes/${note.id}`) },
+                        { text: 'OK' },
+                    ]);
+                } else {
+                    Alert.alert('OCR Failed', 'Could not read handwriting. Try with a clearer image.');
+                }
+            } catch {
+                setIsLoading(false);
+                Alert.alert('Error', 'Failed to process image.');
+            }
+        }
+    };
+
     const handleWriteNote = () => router.push('/notes/create');
 
     return (
@@ -382,6 +426,7 @@ export default function UploadScreen() {
                 <View style={styles.optionsContainer}>
                     <UploadOption icon="camera-outline" title="Take Photo" subtitle="Capture with camera" onPress={handleCamera} color={Colors.accent} />
                     <UploadOption icon="image-outline" title="Choose Image" subtitle="Select from gallery" onPress={handleGallery} color="#9b59b6" />
+                    <UploadOption icon="pencil-outline" title="Handwritten Notes" subtitle="OCR for handwriting" onPress={handleHandwrittenOCR} color="#f39c12" />
                     <UploadOption icon="document-outline" title="Upload PDF" subtitle="Extract text from PDF" onPress={handlePDF} color="#e74c3c" />
                     <UploadOption icon="document-text-outline" title="Text File" subtitle=".txt, .md files" onPress={handleTextFile} color="#3498db" />
                     <UploadOption icon="create-outline" title="Write Note" subtitle="Type manually" onPress={handleWriteNote} color={Colors.success} />
