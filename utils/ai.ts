@@ -10,14 +10,16 @@ const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
 
 // Vision models (can see images) - FREE
 const VISION_MODELS = [
-    'nvidia/nemotron-nano-12b-v2-vl:free',  // NVIDIA - FREE with vision!
+    'google/gemini-2.0-flash-exp:free',     // Google Gemini Flash - FREE with vision!
+    'nvidia/nemotron-nano-12b-v2-vl:free',  // NVIDIA - FREE with vision
 ];
 
 // Text models (no vision) - FREE
 const TEXT_MODELS = [
-    'tng/deepseek-r1t2-chimera:free',       // TNG Chimera - FREE
+    'google/gemini-2.0-flash-exp:free',     // Google Gemini Flash - FREE
+    'meta-llama/llama-3.3-70b-instruct:free', // Meta Llama - FREE
     'deepseek/deepseek-r1:free',            // DeepSeek R1 - FREE
-    'kwaipilot/kat-coder-pro-v1:free',      // KAT Coder - FREE
+    'mistralai/mistral-small-3.1-24b-instruct:free', // Mistral - FREE
 ];
 
 export interface ChatMessage {
